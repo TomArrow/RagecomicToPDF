@@ -1,12 +1,18 @@
-﻿<Window x:Class="Ragemaker.MainWindow"
+﻿<Window x:Class="RagemakerToPDF.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Ragemaker"
+        xmlns:local="clr-namespace:RagemakerToPDF"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="RageToPDF" Height="700" Width="400">
     <Grid>
-        
+        <StackPanel>
+            <Button FontSize="25" Click="LoadRageXML_Click" Height="50">Select ragemaker .xml file</Button>
+            <ScrollViewer Height="600" >
+                <TextBlock x:Name="status" ScrollViewer.CanContentScroll="True">You shouldn't see this.</TextBlock>
+            </ScrollViewer>
+            
+        </StackPanel>
     </Grid>
 </Window>

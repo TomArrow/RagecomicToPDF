@@ -1,7 +1,7 @@
-﻿<Application x:Class="Ragemaker.App"
+﻿<Application x:Class="RagemakerToPDF.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:Ragemaker"
+             xmlns:local="clr-namespace:RagemakerToPDF"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
          
