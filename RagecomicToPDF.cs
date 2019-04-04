@@ -7,6 +7,10 @@ using System.Threading.Tasks;
 using iTextSharp;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
+using System.Runtime.InteropServices;
+using FluxJpeg.Core.Encoder;
+using FluxJpeg.Core.Filtering;
+using FluxJpeg.Core.Decoder;
 
 namespace RagemakerToPDF
 {
@@ -49,15 +53,22 @@ namespace RagemakerToPDF
 
                 PdfContentByte cb = writer.DirectContent;
 
-                if (!comic.gridAboveAll)
+                if (!comic.gridAboveAll && comic.showGrid)
                 {
                     DrawGrid(cb, width, height, rows, comic);
                 }
+
+                // Fill background with white
+                Rectangle rect = new iTextSharp.text.Rectangle(0, 0, width, height);
+                rect.BackgroundColor = new BaseColor(255, 255, 255);
+                cb.Rectangle(rect);
 
                 BaseFont[] fonts = new BaseFont[3];
                 fonts[0] = BaseFont.CreateFont("fonts/TRCourierNew.ttf", BaseFont.CP1252, BaseFont.EMBEDDED);
                 fonts[1] = BaseFont.CreateFont("fonts/TRCourierNewBold.ttf", BaseFont.CP1252, BaseFont.EMBEDDED);
                 fonts[2] = BaseFont.CreateFont("fonts/Tahoma-Bold.ttf", BaseFont.CP1252, BaseFont.EMBEDDED);
+
+                int drawimageindex = 0;
 
                 int index = 0;
                 foreach (var item in comic.items)
@@ -65,11 +76,56 @@ namespace RagemakerToPDF
                     if(item is Face)
                     {
                         Face face = (Face)item;
-                        System.Drawing.Image pngImage = System.Drawing.Image.FromFile("images/"+face.file);
-                        if (face.mirrored){
-                            pngImage.RotateFlip(System.Drawing.RotateFlipType.RotateNoneFlipX);
+                        Image pdfImage;
+                        System.Drawing.Image faceImage;
+                        // If mirroring is necessary, we have to read the image via C# and use RotateFlip, as iTextSharp doesn't support mirroring.
+                        if (face.mirrored)
+                        {
+                            // If it's a JPEG, open it with Flux.JPEG.Core, because the internal JPEG decoder (and also LibJpeg.NET) creates weird dithering artifacts with greyscale JPGs, which some of the rage faces are.
+                            if (Path.GetExtension(face.file).ToLower() == ".jpeg" || Path.GetExtension(face.file).ToLower() == ".jpg")
+                            {
+
+                                FileStream jpegstream = File.OpenRead("images/" + face.file);
+                                FluxJpeg.Core.DecodedJpeg myJpeg = new JpegDecoder(jpegstream).Decode();
+
+                                // Only use this JPEG decoder if the colorspace is Gray. Otherwise the normal one is just fine.
+                                if(myJpeg.Image.ColorModel.colorspace == FluxJpeg.Core.ColorSpace.Gray)
+                                {
+
+                                    myJpeg.Image.ChangeColorSpace(FluxJpeg.Core.ColorSpace.YCbCr);
+                                    faceImage = myJpeg.Image.ToBitmap();
+                                } else
+                                {
+                                    faceImage = System.Drawing.Image.FromFile("images/" + face.file);
+                                }
+                                //JpegImage image = new JpegImage("images/" + face.file);
+                                //faceImage = image.ToBitmap();
+                            }
+                            else
+                            {
+                                faceImage = System.Drawing.Image.FromFile("images/" + face.file);
+                            }
+                            faceImage.RotateFlip(System.Drawing.RotateFlipType.RotateNoneFlipX);
+                            pdfImage = Image.GetInstance(faceImage, System.Drawing.Imaging.ImageFormat.Png);
                         }
-                        Image pdfImage = Image.GetInstance(pngImage, System.Drawing.Imaging.ImageFormat.Png);
+                        else
+                        {
+                            pdfImage = Image.GetInstance("images/" + face.file);
+                        }
+                        /*
+                        System.Drawing.Bitmap image2 = new System.Drawing.Bitmap(faceImage.Width, faceImage.Height,
+                        System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+
+
+                        //draw the input image on the output image within a specified rectangle (area)
+                        using (System.Drawing.Graphics gr = System.Drawing.Graphics.FromImage(image2))
+                        {
+                            gr.DrawImage(faceImage, new System.Drawing.Rectangle(0, 0, image2.Width, image2.Height));
+                        }
+                        image2.Save(pdffile + ".test.png");*/
+                        //pngImage = new System.Windows.Media.Imaging.FormatConvertedBitmap(pngImage, System.Windows.Media.PixelFormats.Bgra32, null, 0);
+                         
+                        //Image pdfImage = Image.GetInstance("images/" + face.file);
                         pdfImage.ScalePercent(face.scalex * 100, face.scaley * 100);
                         pdfImage.SetAbsolutePosition(item.x, (height - item.y)-pdfImage.ScaledHeight);
                         cb.AddImage(pdfImage);
@@ -78,12 +134,17 @@ namespace RagemakerToPDF
                     else if(item is DrawImage)
                     {
                         DrawImage drawimage = (DrawImage)item;
+                        //System.Drawing.Image pngImage = System.Drawing.Image.FromStream(new MemoryStream(drawimage.imagedata));
                         System.Drawing.Image pngImage = System.Drawing.Image.FromStream(new MemoryStream(drawimage.imagedata));
-                        
+                        //pngImage.Save(pdffile+".test"+(drawimageindex++).ToString()+".png");
+
+                        //Image pdfImage = Image.GetInstance(pngImage, System.Drawing.Imaging.ImageFormat.Png);
                         Image pdfImage = Image.GetInstance(pngImage, System.Drawing.Imaging.ImageFormat.Png);
+                        //pdfImage.Transparency = ExtractAlpha(pngImage);
                         pdfImage.SetAbsolutePosition(item.x, (height - item.y) - pdfImage.ScaledHeight);
                         cb.AddImage(pdfImage);
                     }
+
 
                     else if(item is Text)
                     {
@@ -113,7 +174,7 @@ namespace RagemakerToPDF
                     index++;
                 }
 
-                if (comic.gridAboveAll)
+                if (comic.gridAboveAll && comic.showGrid)
                 {
                     DrawGrid(cb, width, height, rows, comic);
                 }
@@ -133,6 +194,7 @@ namespace RagemakerToPDF
 
             return false;
         }
+
 
         public static void DrawGrid(PdfContentByte cb, int width, int height, int rows,Ragecomic comic)
         {
@@ -168,5 +230,6 @@ namespace RagemakerToPDF
 
             }
         }
+
     }
 }
