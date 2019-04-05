@@ -21,7 +21,8 @@ namespace RagemakerToPDF
         public bool gridAboveAll = true;
         public bool showGrid = true;
         public bool redditWatermark = false;
-        public List<RageItem> items = new List<RageItem>();
+        public RageList<RageItem> items = new RageList<RageItem>();
+
 
     }
 }

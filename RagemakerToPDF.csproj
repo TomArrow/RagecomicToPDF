@@ -37,6 +37,9 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="DotNetZip, Version=1.13.3.0, Culture=neutral, PublicKeyToken=6583c7c814667745, processorArchitecture=MSIL">
+      <HintPath>packages\DotNetZip.1.13.3\lib\net40\DotNetZip.dll</HintPath>
+    </Reference>
     <Reference Include="FJ.CoreWin, Version=0.8.0.0, Culture=neutral, PublicKeyToken=d79a4df8eb0cd3e3, processorArchitecture=MSIL">
       <HintPath>packages\Flux.Jpeg.Core.0.8.0\lib\net35\FJ.CoreWin.dll</HintPath>
     </Reference>
@@ -69,6 +72,7 @@
     <Compile Include="Face.cs" />
     <Compile Include="RagecomicToPDF.cs" />
     <Compile Include="RageItem.cs" />
+    <Compile Include="RageList.cs" />
     <Compile Include="Text.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

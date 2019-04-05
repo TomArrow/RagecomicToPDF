@@ -5,12 +5,16 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using iTextSharp;
+using iTextSharp.awt.geom;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
+using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using FluxJpeg.Core.Encoder;
 using FluxJpeg.Core.Filtering;
 using FluxJpeg.Core.Decoder;
+using Ionic;
+using Ionic.Zip;
 
 namespace RagemakerToPDF
 {
@@ -25,7 +29,16 @@ namespace RagemakerToPDF
                 int rows = (int)Math.Ceiling((double)comic.panels / 2);
                 int width = 651;
                 int height = 239 * rows + 1 * rows + 1; // 239 per row, plus 1 pixel border per row, plus 1 pixel extra border
-                
+
+                ZipFile drawImageZip = new ZipFile();
+                bool hasDrawImages = comic.items.getDrawImageCount() > 0;
+
+                if (hasDrawImages)
+                {
+                    drawImageZip.Dispose();
+                    drawImageZip = new ZipFile(pdffile + ".drawimages.zip");
+                }
+
 
                 // Create an instance of the document class which represents the PDF document itself.
                 Rectangle pageSize = new Rectangle(width,height);
@@ -49,6 +62,7 @@ namespace RagemakerToPDF
                 document.Open();
 
                 // Add a simple and wellknown phrase to the document in a flow layout manner
+
 
 
                 PdfContentByte cb = writer.DirectContent;
@@ -98,51 +112,79 @@ namespace RagemakerToPDF
                                 {
                                     faceImage = System.Drawing.Image.FromFile("images/" + face.file);
                                 }
-                                //JpegImage image = new JpegImage("images/" + face.file);
-                                //faceImage = image.ToBitmap();
                             }
                             else
                             {
                                 faceImage = System.Drawing.Image.FromFile("images/" + face.file);
                             }
+
+                            // Apply mirroring
                             faceImage.RotateFlip(System.Drawing.RotateFlipType.RotateNoneFlipX);
                             pdfImage = Image.GetInstance(faceImage, System.Drawing.Imaging.ImageFormat.Png);
                         }
                         else
                         {
+                            // Just let iTextSharp handle it if no mirroring is required. Will also save space (presumably)
                             pdfImage = Image.GetInstance("images/" + face.file);
                         }
-                        /*
-                        System.Drawing.Bitmap image2 = new System.Drawing.Bitmap(faceImage.Width, faceImage.Height,
-                        System.Drawing.Imaging.PixelFormat.Format24bppRgb);
 
-
-                        //draw the input image on the output image within a specified rectangle (area)
-                        using (System.Drawing.Graphics gr = System.Drawing.Graphics.FromImage(image2))
-                        {
-                            gr.DrawImage(faceImage, new System.Drawing.Rectangle(0, 0, image2.Width, image2.Height));
-                        }
-                        image2.Save(pdffile + ".test.png");*/
-                        //pngImage = new System.Windows.Media.Imaging.FormatConvertedBitmap(pngImage, System.Windows.Media.PixelFormats.Bgra32, null, 0);
-                         
-                        //Image pdfImage = Image.GetInstance("images/" + face.file);
                         pdfImage.ScalePercent(face.scalex * 100, face.scaley * 100);
+                        pdfImage.Rotation = -(float)Math.PI * face.rotation / 180.0f;
                         pdfImage.SetAbsolutePosition(item.x, (height - item.y)-pdfImage.ScaledHeight);
+
+                        // Set opacity to proper value 
+                        if(face.opacity < 1)
+                        {
+                            PdfGState graphicsState = new PdfGState();
+                            graphicsState.FillOpacity = face.opacity; 
+                            cb.SetGState(graphicsState);
+                        }
+
                         cb.AddImage(pdfImage);
+
+                        // Set back to normal
+                        if (face.opacity < 1)
+                        {
+                            PdfGState graphicsState = new PdfGState();
+                            graphicsState.FillOpacity = 1f;
+                            cb.SetGState(graphicsState);
+                        }
                     }
 
                     else if(item is DrawImage)
                     {
                         DrawImage drawimage = (DrawImage)item;
-                        //System.Drawing.Image pngImage = System.Drawing.Image.FromStream(new MemoryStream(drawimage.imagedata));
-                        System.Drawing.Image pngImage = System.Drawing.Image.FromStream(new MemoryStream(drawimage.imagedata));
-                        //pngImage.Save(pdffile+".test"+(drawimageindex++).ToString()+".png");
 
-                        //Image pdfImage = Image.GetInstance(pngImage, System.Drawing.Imaging.ImageFormat.Png);
+                        drawImageZip.AddEntry("drawimage_" + (drawimageindex++).ToString() + ".png", drawimage.imagedata);
+
+                        System.Drawing.Image pngImage = System.Drawing.Image.FromStream(new MemoryStream(drawimage.imagedata));
                         Image pdfImage = Image.GetInstance(pngImage, System.Drawing.Imaging.ImageFormat.Png);
-                        //pdfImage.Transparency = ExtractAlpha(pngImage);
+                        
+                        // Rotation is NOT to be applied. Ragemaker actually has a bug that causes it to save rotated images in their rotated form, but save the rotation value anyway
+                        // Thus rotating the image by the rotation value will actually rotate them double compared to what they originally looked like
+                        // The irony is that ragemaker *itself* cannot properly load an xml it created with this rotation value, as it will also apply the rotation
+                        // As such, this tool is currently the only way to correctly display that .xml file as it was originally meant to look, not even ragemaker itself can properly load it again.
+                        //pdfImage.Rotation = -(float)Math.PI * item.rotation / 180.0f;
+
                         pdfImage.SetAbsolutePosition(item.x, (height - item.y) - pdfImage.ScaledHeight);
+
+                        // Opacity likewise seems to be baked in, and in fact the opacity value doesn't even exist.
+                        // Implementing it anyway, in case it ever becomes a thing.
+                        if (drawimage.opacity < 1)
+                        {
+                            PdfGState graphicsState = new PdfGState();
+                            graphicsState.FillOpacity = drawimage.opacity;
+                            cb.SetGState(graphicsState);
+                        }
                         cb.AddImage(pdfImage);
+
+                        // Set back to normal
+                        if (drawimage.opacity < 1)
+                        {
+                            PdfGState graphicsState = new PdfGState();
+                            graphicsState.FillOpacity = 1f;
+                            cb.SetGState(graphicsState);
+                        }
                     }
 
 
@@ -151,23 +193,55 @@ namespace RagemakerToPDF
 
                         int padding = 5;
                         Text text = (Text)item;
-                        //TextField tf = new TextField(writer, new Rectangle(item.x,height - item.y - text.height,text.width,text.height), "text" + (index.ToString()));
-                        //tf.Text = text.text;
-                        //cb.AddAnnotation(tf.GetTextField(), true);
-                        Rectangle textangle = new Rectangle(item.x +padding, height - item.y, item.x+text.width-padding, height - item.y- text.height - padding*2);
-                        ColumnText ct = new ColumnText(cb);
+
+                        // Create template
+                        PdfTemplate xobject = cb.CreateTemplate(text.width,text.height);
+
+                        // Background color (if set)
+                        if (text.bgOn)
+                        {
+                            Rectangle bgRectangle = new Rectangle(0, 0, text.width, text.height);
+                            System.Drawing.Color bgColor = System.Drawing.ColorTranslator.FromHtml(text.bgColor);
+                            rect.BackgroundColor = new BaseColor(bgColor.R, bgColor.G, bgColor.B, (int)Math.Floor(text.opacity*255));
+                            
+                            xobject.Rectangle(rect);
+                        }
+
+                        // Create text
+                        Rectangle textangle = new Rectangle(padding, 0, text.width - padding, text.height);
+                        ColumnText ct = new ColumnText(xobject);
                         ct.SetSimpleColumn(textangle);
                         Paragraph paragraph = new Paragraph(text.text);
                         Font myFont = new Font(fonts[text.style]);
-                       
                         myFont.Size = text.size;
                         System.Drawing.Color color = (System.Drawing.Color) (new System.Drawing.ColorConverter()).ConvertFromString(text.color);
-                        myFont.Color = new BaseColor(color);
+                        myFont.Color = new BaseColor(color.R,color.G,color.B, (int)Math.Floor(text.opacity * 255));
                         paragraph.Font =  myFont;
                         paragraph.Alignment = text.align == Text.ALIGN.LEFT ? PdfContentByte.ALIGN_LEFT : (text.align == Text.ALIGN.RIGHT ? PdfContentByte.ALIGN_RIGHT : PdfContentByte.ALIGN_CENTER);
-                        paragraph.SetLeading(0,1.12f);
+                        paragraph.SetLeading(0, 1.12f);
                         ct.AddElement(paragraph);
                         ct.Go();
+                       
+
+                        // Angle to radians
+                        float angle = (float)Math.PI * text.rotation / 180.0f;
+
+                        // Calculate Bounding Box size for correct placement later
+                        GraphicsPath gp = new GraphicsPath();
+                        gp.AddRectangle(new System.Drawing.Rectangle(0, 0, (int)Math.Round(text.width), (int)Math.Round(text.height)));
+                        Matrix translateMatrix = new Matrix();
+                        translateMatrix.RotateAt(text.rotation, new System.Drawing.PointF(text.width/2, text.height/2));
+                        gp.Transform(translateMatrix);
+                        var gbp = gp.GetBounds();
+                        float newWidth = gbp.Width, newHeight = gbp.Height;
+                        
+                        // Create correct placement
+                        // Background info: I rotate around the center of the text box, thus the center of the text box is what I attempt to place correctly with the initial .Translate()
+                        AffineTransform transform = new AffineTransform();
+                        transform.Translate(item.x+newWidth/2-text.width/2,height-(item.y+newHeight/2-text.height/2)-text.height);
+                        transform.Rotate(-angle, text.width / 2, text.height / 2);
+
+                        cb.AddTemplate(xobject, transform);
                     }
 
 
@@ -188,6 +262,12 @@ namespace RagemakerToPDF
                 writer.Close();
                 // Always close open filehandles explicity
                 fs.Close();
+
+                if (hasDrawImages)
+                {
+                    drawImageZip.Save();
+                }
+                drawImageZip.Dispose();
 
             }
 
