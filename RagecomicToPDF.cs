@@ -36,7 +36,13 @@ namespace RagemakerToPDF
                 if (hasDrawImages)
                 {
                     drawImageZip.Dispose();
-                    drawImageZip = new ZipFile(pdffile + ".drawimages.zip");
+                    string addition = "";
+                    int nr = 1;
+                    while(File.Exists(pdffile + ".drawimages"+addition+".zip"))
+                    {
+                        addition = "_"+(nr++).ToString();
+                    }
+                    drawImageZip = new ZipFile(pdffile + ".drawimages" + addition + ".zip");
                 }
 
 
