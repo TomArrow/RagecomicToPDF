@@ -75,10 +75,13 @@ namespace RagemakerToPDF
                                 case "gridLinesArray":
                                     string gridLinesArray = reader.ReadInnerXml();
                                     status.Text += "gridLinesArray: " + gridLinesArray+ "\n";
-                                    comic.gridLines = new bool[gridLinesArray.Length];
+                                    int matrices = gridLinesArray.Length / 5;
+                                    comic.gridLines = new int[matrices, 5];
                                     for(var i = 0; i < gridLinesArray.Length; i++)
                                     {
-                                        comic.gridLines[i] = gridLinesArray[i].ToString() == "1" ? true: false;
+                                        int matrixIndex = (int)Math.Floor((double)i  / 5);
+                                        int subIndex = i % 5;
+                                        comic.gridLines[matrixIndex,subIndex] = int.Parse(gridLinesArray[i].ToString());
                                         //status.Text += comic.gridLines[i] + "\n";
                                     }
                                     //comic.panels = panels;
@@ -97,6 +100,7 @@ namespace RagemakerToPDF
                                     break;
                                 case "Face":
                                 case "Text":
+                                case "AnyFont":
                                 case "Draw":
                                 case "Image":
                                     if (reader.NodeType == XmlNodeType.EndElement) break;

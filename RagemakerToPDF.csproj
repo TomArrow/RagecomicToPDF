@@ -68,8 +68,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AnyFontText.cs" />
     <Compile Include="DrawImage.cs" />
     <Compile Include="Face.cs" />
+    <Compile Include="FontFinder.cs" />
     <Compile Include="RagecomicToPDF.cs" />
     <Compile Include="RageItem.cs" />
     <Compile Include="RageList.cs" />

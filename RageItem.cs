@@ -30,6 +30,9 @@ namespace RagemakerToPDF
                 case "Text":
                     item = new Text();
                     break;
+                case "AnyFont":
+                    item = new AnyFontText();
+                    break;
                 case "Draw":
                 case "Image":
                     item = new DrawImage(); 
@@ -108,6 +111,27 @@ namespace RagemakerToPDF
                             break;
                         default:
                             break;
+                    }
+
+                    if(item is AnyFontText)
+                    {
+                        switch (subtree.Name)
+                        {
+                            case "font":
+                                ((AnyFontText)item).font = HttpUtility.HtmlDecode(subtree.ReadInnerXml());
+                                break;
+                            case "bold":
+                                ((AnyFontText)item).bold = bool.Parse(subtree.ReadInnerXml());
+                                break;
+                            case "italic":
+                                ((AnyFontText)item).italic = bool.Parse(subtree.ReadInnerXml());
+                                break;
+                            case "underline":
+                                ((AnyFontText)item).underline = bool.Parse(subtree.ReadInnerXml());
+                                break;
+                            default:
+                                break;
+                        }
                     }
                 }
 

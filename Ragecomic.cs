@@ -17,7 +17,7 @@ namespace RagemakerToPDF
          * <redditWatermark>false</redditWatermark>
          */
         public int panels = 2;
-        public bool[] gridLines = new bool[1];
+        public int[,] gridLines;
         public bool gridAboveAll = true;
         public bool showGrid = true;
         public bool redditWatermark = false;

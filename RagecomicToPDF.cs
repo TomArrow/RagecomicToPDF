@@ -4,6 +4,7 @@ using System.Linq;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using MyMedia = System.Windows.Media;
 using iTextSharp;
 using iTextSharp.awt.geom;
 using iTextSharp.text;
@@ -12,6 +13,7 @@ using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using FluxJpeg.Core.Encoder;
 using FluxJpeg.Core.Filtering;
+using Draw = System.Drawing;
 using FluxJpeg.Core.Decoder;
 using Ionic;
 using Ionic.Zip;
@@ -67,26 +69,41 @@ namespace RagemakerToPDF
 
                 document.Open();
 
-                // Add a simple and wellknown phrase to the document in a flow layout manner
-
-
-
+                
                 PdfContentByte cb = writer.DirectContent;
-
-                if (!comic.gridAboveAll && comic.showGrid)
-                {
-                    DrawGrid(cb, width, height, rows, comic);
-                }
 
                 // Fill background with white
                 Rectangle rect = new iTextSharp.text.Rectangle(0, 0, width, height);
                 rect.BackgroundColor = new BaseColor(255, 255, 255);
                 cb.Rectangle(rect);
 
-                BaseFont[] fonts = new BaseFont[3];
-                fonts[0] = BaseFont.CreateFont("fonts/TRCourierNew.ttf", BaseFont.CP1252, BaseFont.EMBEDDED);
-                fonts[1] = BaseFont.CreateFont("fonts/TRCourierNewBold.ttf", BaseFont.CP1252, BaseFont.EMBEDDED);
-                fonts[2] = BaseFont.CreateFont("fonts/Tahoma-Bold.ttf", BaseFont.CP1252, BaseFont.EMBEDDED);
+                // Draw grid on bottom if it isn't set to be on top.
+                if (!comic.gridAboveAll && comic.showGrid)
+                {
+                    DrawGrid(cb, width, height, rows, comic);
+                }
+
+                //List<MyMedia.FontFamily> families =  MyMedia.Fonts.SystemFontFamilies.ToList();
+
+                // This was a neat idea, but it's much too slow
+                //List<string> files = FontFinder.GetFilesForFont("Courier New").ToList();
+
+                //string filename = FontFinder.GetSystemFontFileName(families[0].)
+
+                //Draw.Font testFont = new Draw.Font(new Draw.FontFamily("Courier New"),12f,Draw.FontStyle.Regular  | Draw.FontStyle.Bold);
+
+                string courierPath = FontFinder.GetSystemFontFileName("Courier New", true);
+                string courierBoldPath = FontFinder.GetSystemFontFileName("Courier New", true, Draw.FontStyle.Bold);
+                string tahomaPath = FontFinder.GetSystemFontFileName("Tahoma", true, Draw.FontStyle.Bold);
+
+                // Define base fonts
+                Font[] fonts = new Font[3];
+                fonts[0] = new Font(BaseFont.CreateFont(courierPath, BaseFont.CP1252, BaseFont.EMBEDDED));
+                fonts[1] = new Font(BaseFont.CreateFont(courierBoldPath, BaseFont.CP1252, BaseFont.EMBEDDED));
+                fonts[2] = new Font(BaseFont.CreateFont(tahomaPath, BaseFont.CP1252, BaseFont.EMBEDDED));
+                /*fonts[0] = BaseFont.CreateFont("fonts/TRCourierNew.ttf", BaseFont.CP1252, BaseFont.EMBEDDED);
+                   fonts[1] = BaseFont.CreateFont("fonts/TRCourierNewBold.ttf", BaseFont.CP1252, BaseFont.EMBEDDED);
+                   fonts[2] = new Font(BaseFont.CreateFont("fonts/Tahoma-Bold.ttf", BaseFont.CP1252, BaseFont.EMBEDDED));*/
 
                 int drawimageindex = 0;
 
@@ -197,7 +214,7 @@ namespace RagemakerToPDF
                     else if(item is Text)
                     {
 
-                        int padding = 5;
+                        int padding = 4;
                         Text text = (Text)item;
 
                         // Create template
@@ -218,7 +235,53 @@ namespace RagemakerToPDF
                         ColumnText ct = new ColumnText(xobject);
                         ct.SetSimpleColumn(textangle);
                         Paragraph paragraph = new Paragraph(text.text);
-                        Font myFont = new Font(fonts[text.style]);
+
+                        Font myFont = fonts[text.style];
+
+                        // More specific treatment if it's an AnyFont element which allows the user to select any font and styles, not just the normal 3 presets
+                        // This isn't perfect, as the current FontFinder doesn't indicate whether he actually found an Italic/Bold typeface, hence it's not possible
+                        // to determine whether faux-italic/faux-bold should be applied. Currently it will only work correctly if each used font has a specific typeface
+                        // for the needed styles (bold or italic), otherwise incorrect results. 
+                        // TODO Fix, for example let FontFinder return array of strings, one of which is indicating the suffix that was found.
+                        if (text is AnyFontText)
+                        {
+                            AnyFontText anyfont = (AnyFontText)text;
+                            string fontname = anyfont.font;
+                            string fontfile = "";
+                            if (anyfont.bold)
+                            {
+                                fontfile = FontFinder.GetSystemFontFileName(fontname, true, Draw.FontStyle.Bold);
+                                int fontStyle = 0;
+                                if (anyfont.italic)
+                                {
+                                    fontStyle |= Font.ITALIC;
+                                }
+                                if (anyfont.underline)
+                                {
+                                    fontStyle |= Font.UNDERLINE;
+                                }
+                                myFont = new Font(BaseFont.CreateFont(fontfile, BaseFont.CP1252, BaseFont.EMBEDDED),100f, fontStyle);
+                            } else if (anyfont.italic)
+                            {
+                                fontfile = FontFinder.GetSystemFontFileName(fontname, true, Draw.FontStyle.Italic);
+                                int fontStyle = 0;
+                                if (anyfont.underline)
+                                {
+                                    fontStyle |= Font.UNDERLINE;
+                                }
+                                myFont = new Font(BaseFont.CreateFont(fontfile, BaseFont.CP1252, BaseFont.EMBEDDED), 100f, fontStyle);
+                            } else
+                            {
+                                fontfile = FontFinder.GetSystemFontFileName(fontname, true, Draw.FontStyle.Regular);
+                                int fontStyle = 0;
+                                if (anyfont.underline)
+                                {
+                                    fontStyle |= Font.UNDERLINE;
+                                }
+                                myFont = new Font(BaseFont.CreateFont(fontfile, BaseFont.CP1252, BaseFont.EMBEDDED), 100f, fontStyle);
+                            }
+                        }
+
                         myFont.Size = text.size;
                         System.Drawing.Color color = (System.Drawing.Color) (new System.Drawing.ColorConverter()).ConvertFromString(text.color);
                         myFont.Color = new BaseColor(color.R,color.G,color.B, (int)Math.Floor(text.opacity * 255));
