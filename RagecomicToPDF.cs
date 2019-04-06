@@ -40,16 +40,16 @@ namespace RagemakerToPDF
                     drawImageZip.Dispose();
                     string addition = "";
                     int nr = 1;
-                    while(File.Exists(pdffile + ".drawimages"+addition+".zip"))
+                    while (File.Exists(pdffile + ".drawimages" + addition + ".zip"))
                     {
-                        addition = "_"+(nr++).ToString();
+                        addition = "_" + (nr++).ToString();
                     }
                     drawImageZip = new ZipFile(pdffile + ".drawimages" + addition + ".zip");
                 }
 
 
                 // Create an instance of the document class which represents the PDF document itself.
-                Rectangle pageSize = new Rectangle(width,height);
+                Rectangle pageSize = new Rectangle(width, height);
                 Document document = new Document(pageSize, 0, 0, 0, 0);
                 // Create an instance to the PDF file by creating an instance of the PDF
                 // Writer class using the document and the filestrem in the constructor.
@@ -69,7 +69,7 @@ namespace RagemakerToPDF
 
                 document.Open();
 
-                
+
                 PdfContentByte cb = writer.DirectContent;
 
                 // Fill background with white
@@ -110,7 +110,7 @@ namespace RagemakerToPDF
                 int index = 0;
                 foreach (var item in comic.items)
                 {
-                    if(item is Face)
+                    if (item is Face)
                     {
                         Face face = (Face)item;
                         Image pdfImage;
@@ -126,7 +126,7 @@ namespace RagemakerToPDF
                                 FluxJpeg.Core.DecodedJpeg myJpeg = new JpegDecoder(jpegstream).Decode();
 
                                 // Only use this JPEG decoder if the colorspace is Gray. Otherwise the normal one is just fine.
-                                if(myJpeg.Image.ColorModel.colorspace == FluxJpeg.Core.ColorSpace.Gray)
+                                if (myJpeg.Image.ColorModel.colorspace == FluxJpeg.Core.ColorSpace.Gray)
                                 {
 
                                     myJpeg.Image.ChangeColorSpace(FluxJpeg.Core.ColorSpace.YCbCr);
@@ -153,13 +153,13 @@ namespace RagemakerToPDF
 
                         pdfImage.ScalePercent(face.scalex * 100, face.scaley * 100);
                         pdfImage.Rotation = -(float)Math.PI * face.rotation / 180.0f;
-                        pdfImage.SetAbsolutePosition(item.x, (height - item.y)-pdfImage.ScaledHeight);
+                        pdfImage.SetAbsolutePosition(item.x, (height - item.y) - pdfImage.ScaledHeight);
 
                         // Set opacity to proper value 
-                        if(face.opacity < 1)
+                        if (face.opacity < 1)
                         {
                             PdfGState graphicsState = new PdfGState();
-                            graphicsState.FillOpacity = face.opacity; 
+                            graphicsState.FillOpacity = face.opacity;
                             cb.SetGState(graphicsState);
                         }
 
@@ -174,7 +174,7 @@ namespace RagemakerToPDF
                         }
                     }
 
-                    else if(item is DrawImage)
+                    else if (item is DrawImage)
                     {
                         DrawImage drawimage = (DrawImage)item;
 
@@ -182,7 +182,7 @@ namespace RagemakerToPDF
 
                         System.Drawing.Image pngImage = System.Drawing.Image.FromStream(new MemoryStream(drawimage.imagedata));
                         Image pdfImage = Image.GetInstance(pngImage, System.Drawing.Imaging.ImageFormat.Png);
-                        
+
                         // Rotation is NOT to be applied. Ragemaker actually has a bug that causes it to save rotated images in their rotated form, but save the rotation value anyway
                         // Thus rotating the image by the rotation value will actually rotate them double compared to what they originally looked like
                         // The irony is that ragemaker *itself* cannot properly load an xml it created with this rotation value, as it will also apply the rotation
@@ -211,22 +211,22 @@ namespace RagemakerToPDF
                     }
 
 
-                    else if(item is Text)
+                    else if (item is Text)
                     {
 
                         int padding = 4;
                         Text text = (Text)item;
 
                         // Create template
-                        PdfTemplate xobject = cb.CreateTemplate(text.width,text.height);
+                        PdfTemplate xobject = cb.CreateTemplate(text.width, text.height);
 
                         // Background color (if set)
                         if (text.bgOn)
                         {
                             Rectangle bgRectangle = new Rectangle(0, 0, text.width, text.height);
                             System.Drawing.Color bgColor = System.Drawing.ColorTranslator.FromHtml(text.bgColor);
-                            rect.BackgroundColor = new BaseColor(bgColor.R, bgColor.G, bgColor.B, (int)Math.Floor(text.opacity*255));
-                            
+                            rect.BackgroundColor = new BaseColor(bgColor.R, bgColor.G, bgColor.B, (int)Math.Floor(text.opacity * 255));
+
                             xobject.Rectangle(rect);
                         }
 
@@ -237,6 +237,8 @@ namespace RagemakerToPDF
                         Paragraph paragraph = new Paragraph(text.text);
 
                         Font myFont = fonts[text.style];
+
+
 
                         // More specific treatment if it's an AnyFont element which allows the user to select any font and styles, not just the normal 3 presets
                         // This isn't perfect, as the current FontFinder doesn't indicate whether he actually found an Italic/Bold typeface, hence it's not possible
@@ -260,7 +262,7 @@ namespace RagemakerToPDF
                                 {
                                     fontStyle |= Font.UNDERLINE;
                                 }
-                                myFont = new Font(BaseFont.CreateFont(fontfile, BaseFont.CP1252, BaseFont.EMBEDDED),100f, fontStyle);
+                                myFont = new Font(BaseFont.CreateFont(fontfile, BaseFont.CP1252, BaseFont.EMBEDDED), 100f, fontStyle);
                             } else if (anyfont.italic)
                             {
                                 fontfile = FontFinder.GetSystemFontFileName(fontname, true, Draw.FontStyle.Italic);
@@ -282,15 +284,17 @@ namespace RagemakerToPDF
                             }
                         }
 
+
+
                         myFont.Size = text.size;
-                        System.Drawing.Color color = (System.Drawing.Color) (new System.Drawing.ColorConverter()).ConvertFromString(text.color);
-                        myFont.Color = new BaseColor(color.R,color.G,color.B, (int)Math.Floor(text.opacity * 255));
-                        paragraph.Font =  myFont;
+                        System.Drawing.Color color = (System.Drawing.Color)(new System.Drawing.ColorConverter()).ConvertFromString(text.color);
+                        myFont.Color = new BaseColor(color.R, color.G, color.B, (int)Math.Floor(text.opacity * 255));
+                        paragraph.Font = myFont;
                         paragraph.Alignment = text.align == Text.ALIGN.LEFT ? PdfContentByte.ALIGN_LEFT : (text.align == Text.ALIGN.RIGHT ? PdfContentByte.ALIGN_RIGHT : PdfContentByte.ALIGN_CENTER);
                         paragraph.SetLeading(0, 1.12f);
                         ct.AddElement(paragraph);
                         ct.Go();
-                       
+
 
                         // Angle to radians
                         float angle = (float)Math.PI * text.rotation / 180.0f;
@@ -299,15 +303,15 @@ namespace RagemakerToPDF
                         GraphicsPath gp = new GraphicsPath();
                         gp.AddRectangle(new System.Drawing.Rectangle(0, 0, (int)Math.Round(text.width), (int)Math.Round(text.height)));
                         Matrix translateMatrix = new Matrix();
-                        translateMatrix.RotateAt(text.rotation, new System.Drawing.PointF(text.width/2, text.height/2));
+                        translateMatrix.RotateAt(text.rotation, new System.Drawing.PointF(text.width / 2, text.height / 2));
                         gp.Transform(translateMatrix);
                         var gbp = gp.GetBounds();
                         float newWidth = gbp.Width, newHeight = gbp.Height;
-                        
+
                         // Create correct placement
                         // Background info: I rotate around the center of the text box, thus the center of the text box is what I attempt to place correctly with the initial .Translate()
                         AffineTransform transform = new AffineTransform();
-                        transform.Translate(item.x+newWidth/2-text.width/2,height-(item.y+newHeight/2-text.height/2)-text.height);
+                        transform.Translate(item.x + newWidth / 2 - text.width / 2, height - (item.y + newHeight / 2 - text.height / 2) - text.height);
                         transform.Rotate(-angle, text.width / 2, text.height / 2);
 
                         cb.AddTemplate(xobject, transform);
@@ -345,8 +349,14 @@ namespace RagemakerToPDF
         }
 
 
-        public static void DrawGrid(PdfContentByte cb, int width, int height, int rows,Ragecomic comic)
+        public static void DrawGrid(PdfContentByte cb, int width, int height, int rows, Ragecomic comic)
         {
+
+            if (!comic.showGrid)
+            {
+                return;
+            }
+
             // Outer box
             Rectangle rect = new iTextSharp.text.Rectangle(0, 0, width, height);
             //rect.Border = iTextSharp.text.Rectangle.LEFT_BORDER | iTextSharp.text.Rectangle.RIGHT_BORDER;
@@ -355,6 +365,103 @@ namespace RagemakerToPDF
             rect.BorderColor = new BaseColor(0, 0, 0);
             cb.Rectangle(rect);
 
+
+            int matricesCount = comic.gridLines.GetLength(0);
+            int rowHeight = 239; // row height excluding borders/gridlines
+            int rowWidth = 324; // row width excluding borders/gridlines
+            int borderThickness = 1; // It's just 1. Won't really change, but whatever.
+
+
+            cb.SetColorStroke(new BaseColor(0, 0, 0));
+            PdfGState graphicsState = new PdfGState();
+            graphicsState.FillOpacity = 0f;
+            cb.SetGState(graphicsState);
+
+            // The first dimension of the array represents "rows" in a sense.
+            // And the second dimension has 5 values each, representing various gridlines.
+            // Gridlines row format:
+            // 0 - bottom left
+            // 1 - center
+            // 2 - bottom right
+            // 3 - left diagonal 
+            // 4 - right diagonal
+            // diagonals can be 0,1 or 2. 
+            // 0 - disabled
+            // 1 - bottom left to top right
+            // 2 - top left to bottom right
+            for (int i = 0; i < matricesCount; i++)
+            {
+                int ipp = i + 1;
+
+                // bottom left
+                if (comic.gridLines[i, 0] > 0) {
+                    cb.MoveTo(0,height-rowHeight*ipp- borderThickness * ipp);
+                    cb.LineTo(borderThickness + rowWidth,height-rowHeight* ipp - borderThickness * ipp);
+                    cb.Stroke();
+                }
+
+                // center vertical
+                if (comic.gridLines[i, 1] > 0)
+                {
+                    cb.MoveTo(borderThickness + rowWidth, height - rowHeight * ipp - borderThickness * ipp);
+                    cb.LineTo(borderThickness + rowWidth, height - rowHeight * i - borderThickness * i);
+                    cb.Stroke();
+                }
+
+                // bottom right
+                if (comic.gridLines[i, 2] > 0)
+                {
+                    cb.MoveTo(borderThickness + rowWidth, height - rowHeight * ipp - borderThickness * ipp);
+                    cb.LineTo(borderThickness * 2 + rowWidth * 2, height - rowHeight * ipp - borderThickness * ipp);
+                    cb.Stroke();
+                }
+
+                // left: bottom left to top right
+                if (comic.gridLines[i, 3] == 1)
+                {
+                    cb.MoveTo(0, height - rowHeight * ipp - borderThickness * ipp);
+                    cb.LineTo(borderThickness + rowWidth, height - rowHeight * i - borderThickness * i);
+                    cb.Stroke();
+                }
+                // left: top left to bottom right
+                else if(comic.gridLines[i, 3] == 2) {
+                    cb.MoveTo(0, height - rowHeight * i - borderThickness * i);
+                    cb.LineTo(borderThickness + rowWidth, height - rowHeight * ipp - borderThickness * ipp);
+                    cb.Stroke();
+                }
+
+                // right: bottom left to top right
+                if (comic.gridLines[i, 4] == 1)
+                {
+                    cb.MoveTo(borderThickness+ rowWidth, height - rowHeight * ipp - borderThickness * ipp);
+                    cb.LineTo(borderThickness*2 + rowWidth*2, height - rowHeight * i - borderThickness * i);
+                    cb.Stroke();
+                }
+                // right: top left to bottom right
+                else if (comic.gridLines[i, 4] == 2) {
+                    cb.MoveTo(borderThickness + rowWidth, height - rowHeight * i - borderThickness * i);
+                    cb.LineTo(borderThickness * 2 + rowWidth * 2, height - rowHeight * ipp - borderThickness * ipp);
+                    cb.Stroke();
+                }
+
+            }
+
+            // Lastly, the existence of the center gridline in the bottommost row is determined by the panel count
+            if (comic.panels % 2 == 0) {
+
+                int i = matricesCount;
+                int ipp = i + 1;
+
+                // center vertical
+                cb.MoveTo(borderThickness + rowWidth, height - rowHeight * ipp - borderThickness * ipp);
+                cb.LineTo(borderThickness + rowWidth, height - rowHeight * i - borderThickness * i);
+                cb.Stroke();
+            }
+
+
+            graphicsState.FillOpacity = 1f;
+            cb.SetGState(graphicsState);
+            /*
             // Rows
             // This section is really weird and wonky, but somehow it works. Someday gotta fix that shit.
             for (int i = 0; i <= rows; i++)
@@ -378,6 +485,7 @@ namespace RagemakerToPDF
                 cb.Rectangle(rect);
 
             }
+            */
         }
 
     }
