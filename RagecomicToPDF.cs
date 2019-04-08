@@ -23,14 +23,20 @@ namespace RagemakerToPDF
     class RagecomicToPDF
     {
 
+
+
+        static int rowHeight = 239; // row height excluding borders/gridlines
+        static int rowWidth = 324; // row width excluding borders/gridlines
+        static int borderThickness = 1; // It's just 1. Won't really change, but whatever. If you change it, things will get fucky.
+
         public static bool MakePDF(Ragecomic comic, string pdffile)
         {
             using (System.IO.FileStream fs = new FileStream(pdffile, FileMode.Create))
             {
 
                 int rows = (int)Math.Ceiling((double)comic.panels / 2);
-                int width = 651;
-                int height = 239 * rows + 1 * rows + 1; // 239 per row, plus 1 pixel border per row, plus 1 pixel extra border
+                int width = rowWidth * 2 + borderThickness * 3;
+                int height = rowHeight * rows + borderThickness * rows + borderThickness; // 239 per row, plus 1 pixel border per row, plus 1 pixel extra border
 
                 ZipFile drawImageZip = new ZipFile();
                 bool hasDrawImages = comic.items.getDrawImageCount() > 0;
@@ -367,9 +373,6 @@ namespace RagemakerToPDF
 
 
             int matricesCount = comic.gridLines.GetLength(0);
-            int rowHeight = 239; // row height excluding borders/gridlines
-            int rowWidth = 324; // row width excluding borders/gridlines
-            int borderThickness = 1; // It's just 1. Won't really change, but whatever.
 
 
             cb.SetColorStroke(new BaseColor(0, 0, 0));
@@ -461,31 +464,6 @@ namespace RagemakerToPDF
 
             graphicsState.FillOpacity = 1f;
             cb.SetGState(graphicsState);
-            /*
-            // Rows
-            // This section is really weird and wonky, but somehow it works. Someday gotta fix that shit.
-            for (int i = 0; i <= rows; i++)
-            {
-                // Horizontal
-                if (i != rows)
-                {
-                    rect = new iTextSharp.text.Rectangle(0, 0 + (239 + 1) * (i + 1), width, 239 + 1);
-                    rect.Border = iTextSharp.text.Rectangle.BOTTOM_BORDER;
-                    rect.BorderWidth = 1;
-                    rect.BorderColor = new BaseColor(0, 0, 0);
-                    cb.Rectangle(rect);
-                }
-
-                // Vertical
-                if (comic.panels % 2 > 0 && i == 0) { continue; }
-                rect = new iTextSharp.text.Rectangle(0, (239 + 1) * (i), 324 + 1 + 1, 239 + 1);
-                rect.Border = iTextSharp.text.Rectangle.RIGHT_BORDER;
-                rect.BorderWidth = 1;
-                rect.BorderColor = new BaseColor(0, 0, 0);
-                cb.Rectangle(rect);
-
-            }
-            */
         }
 
     }
