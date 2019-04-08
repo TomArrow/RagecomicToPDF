@@ -17,6 +17,8 @@ I know it's of limited real life use, but it was fun to make and it taught me a 
 - Takes color of text and background color into account.
 - Draws a grid and sets document size depending on the number of panels
 - Reads grayscale JPEGs with a special library, because the normal library, for whatever reason, creates weird dithering artifacts on grayscale JPEGs.
+- Takes detailed grid settings into account, for example disabled gridlines and diagonal gridlines.
+- Supports AnyFont areas (those textareas where you can choose any font you like)
 
 ### Under the hood:
 - Somewhat object-oriented, with objects representing the comic and the individual items in it
@@ -32,4 +34,6 @@ Overall lots of aspects about C# programming that this allowed me to learn, so I
 
 The image in this post shows the improvement in the png (left) over the native png (right).
 
-Sadly there is one bug I can't solve, which is that transparency often results in a  weird grey border in some places, which can destroy some of the comics. Apparently this is due to how PDFs work, but I believe there must be a solution to it. Couldn't find it yet tho.
+## Know nissues 
+- Sadly there is one bug I can't solve, which is that transparency often results in a  weird grey border in some places, which can destroy some of the comics. Apparently this is due to how PDFs work, but I believe there must be a solution to it. Couldn't find it yet tho.
+- Positioning isn't perfect, some rare arrangements of text can result in big text positioning errors. Probably not hard to solve, but oh well.
