@@ -1,0 +1,57 @@
+<ragemaker>
+  <panels>2</panels>
+  <gridLinesArray/>
+  <gridAboveAll>true</gridAboveAll>
+  <showGrid>true</showGrid>
+  <redditWatermark>false</redditWatermark>
+  <Face>
+    <itemx>0</itemx>
+    <itemy>1.5</itemy>
+    <facename>Determined - Focused/fumanchu.jpg</facename>
+    <scalex>1</scalex>
+    <scaley>1</scaley>
+    <mirrored>false</mirrored>
+    <rotation>0</rotation>
+    <opacity>1</opacity>
+  </Face>
+  <Face>
+    <itemx>327</itemx>
+    <itemy>1.5</itemy>
+    <facename>Determined - Focused/fumanchu.jpg</facename>
+    <scalex>1</scalex>
+    <scaley>1</scaley>
+    <mirrored>false</mirrored>
+    <rotation>0</rotation>
+    <opacity>1</opacity>
+  </Face>
+  <Text>
+    <itemx>12</itemx>
+    <itemy>14</itemy>
+    <width>299</width>
+    <height>79</height>
+    <color>0</color>
+    <style>0</style>
+    <size>16</size>
+    <rotation>0</rotation>
+    <text>Me reacting to a trailer I really hate</text>
+    <align>left</align>
+    <bgOn>false</bgOn>
+    <bgColor>16777215</bgColor>
+    <opacity>1</opacity>
+  </Text>
+  <Text>
+    <itemx>346</itemx>
+    <itemy>13</itemy>
+    <width>250</width>
+    <height>50</height>
+    <color>0</color>
+    <style>0</style>
+    <size>16</size>
+    <rotation>0</rotation>
+    <text>Me reacting to a trailer I really like</text>
+    <align>left</align>
+    <bgOn>false</bgOn>
+    <bgColor>16777215</bgColor>
+    <opacity>1</opacity>
+  </Text>
+</ragemaker>

@@ -51,3 +51,11 @@ The image in this post shows the improvement in the png (left) over the native p
 - DotNetZip.1.13.3
 - Flux.Jpeg.Core.0.8.0
 - iTextSharp.5.5.13
+
+
+## Examples
+There are a few sample .xml files from my own comics in the examples folder. You can use these for testing. The .png files are also included for reference.
+
+
+### Interesting
+- When you rotate an imported image or drawing on ragemaker.net, it will be saved with the rotation value in the .xml, but it will also be baked into the embedded base64 png. When you load such an .xml file back into ragemaker.net, the rotation will be wrong. This is a bug. For this reason I simply ignore rotation for such elements, thus they appear the correct way (since they have that information already baked in). 
