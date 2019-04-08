@@ -34,15 +34,18 @@ Overall lots of aspects about C# programming that this allowed me to learn, so I
 
 The image in this post shows the improvement in the png (left) over the native png (right).
 
-## Know nissues 
+## Known issues 
 - Sadly there is one bug I can't solve, which is that transparency often results in a  weird grey border in some places, which can destroy some of the comics. Apparently this is due to how PDFs work, but I believe there must be a solution to it. Couldn't find it yet tho.
 - Positioning isn't perfect, some rare arrangements of text can result in big text positioning errors. Probably not hard to solve, but oh well.
+- Not sure I have 100% the correct font faces, but it's pretty close.
 
 
 ## Requirements/Dependencies
 ### Runtime:
 - .NET Framework 4.5
 - images folder containing all the rage faces (with subfolders based on category, as on ragemaker.net) in the same folder as the main .exe file. I am including this in the main folder here, just copy it into the .exe folder. This is just the images from ragemaker.net, no changes. If you own any of these images and want them taken down, please let me know.
+- Courier New Regular, Courier New Bold and Tahoma Bold font faces must be installed on the system you're using this software on. Since they are default Windows fonts, that should not be a problem.
+- For AnyFont fields, any font that was used in the comic needs to be installed.
 
 ### Compilation:
 - DotNetZip.1.13.3
